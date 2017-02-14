@@ -123,7 +123,16 @@ class RuleSetGenerator
             return null;
         }
 
-        return new Rule(array(-$issuer->id, -$provider->id), $reason, $reasonData);
+	//return new Rule(array(-$issuer->id, -$provider->id), $reason, $reasonData);
+	var_dump($issuer->getPrettyName().'-'.$issuer->getPrettyVersion());
+        var_dump($provider->getPrettyName().'-'.$provider->getPrettyVersion());
+	var_dump($reason);
+	var_dump($reasonData ? get_class($reasonData) : $reasonData);	
+	$old = memory_get_usage(true);
+        $rule = new Rule(array(-$issuer->id, -$provider->id), $reason, $reasonData);
+	$new = memory_get_usage(true);
+	echo "mem:", ($new - $old), "\n";
+	return $rule;
     }
 
     /**
@@ -331,6 +340,19 @@ class RuleSetGenerator
         }
 
         $this->addRulesForJobs($ignorePlatformReqs);
+
+
+        //TODO
+        $rules = $this->rules->getRules();
+        foreach ($rules as $t => $rr) {
+            foreach ($rr as $r) {
+                var_dump("" . $t . " - " . $r->getReason());
+                var_dump(count($r->literals));
+                var_dump((string)$r);
+                var_dump("-----");
+            }
+        }
+
 
         return $this->rules;
     }
