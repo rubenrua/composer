@@ -107,15 +107,16 @@ class RuleTwo implements Rule
      */
     public function equals(Rule $rule)
     {
-        //TODO
-        if (count($this->getLiterals()) != count($rule->getLiterals())) {
+        if (2 != count($rule->getLiterals())) {
             return false;
         }
 
-        for ($i = 0, $n = count($this->getLiterals()); $i < $n; $i++) {
-            if ($this->getLiterals()[$i] !== $rule->getLiterals()[$i]) {
-                return false;
-            }
+        if ($this->literal1 !== $rule->getLiterals()[0]) {
+            return false;
+        }
+
+        if ($this->literal2 !== $rule->getLiterals()[1]) {
+            return false;
         }
 
         return true;
@@ -159,12 +160,10 @@ class RuleTwo implements Rule
     public function getPrettyString(Pool $pool, array $installedMap = array())
     {
         $ruleText = '';
-        foreach ($this->getLiterals() as $i => $literal) {
-            if ($i != 0) {
-                $ruleText .= '|';
-            }
-            $ruleText .= $pool->literalToPrettyString($literal, $installedMap);
-        }
+
+        $ruleText .= $pool->literalToPrettyString($this->literal1, $installedMap);
+        $ruleText .= '|';
+        $ruleText .= $pool->literalToPrettyString($this->literal2, $installedMap);
 
         switch ($this->getReason()) {
             case self::RULE_INTERNAL_ALLOW_UPDATE:
