@@ -193,7 +193,7 @@ class Solver
 
                     if (!$this->pool->whatProvides($job['packageName'], $job['constraint'])) {
                         $problem = new Problem($this->pool);
-                        $problem->addRule(new Rule(array(), null, null, $job));
+                        $problem->addRule(new RuleImpl(array(), null, null, $job));
                         $this->problems[] = $problem;
                     }
                     break;
@@ -498,7 +498,7 @@ class Solver
             );
         }
 
-        $newRule = new Rule($learnedLiterals, Rule::RULE_LEARNED, $why);
+        $newRule = new RuleImpl($learnedLiterals, Rule::RULE_LEARNED, $why);
 
         return array($learnedLiterals[0], $ruleLevel, $newRule, $why);
     }
