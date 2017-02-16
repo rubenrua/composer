@@ -71,6 +71,11 @@ class Rule
             (255 << self::BITFIELD_TYPE);
     }
 
+    public function getLiterals()
+    {
+        return $this->literals;
+    }
+
     public function getHash()
     {
         $data = unpack('ihash', md5(implode(',', $this->literals), true));
