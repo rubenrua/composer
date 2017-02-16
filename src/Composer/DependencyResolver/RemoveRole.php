@@ -19,35 +19,21 @@ use Composer\Package\Link;
 /**
  * @author Nils Adermann <naderman@naderman.de>
  */
-class RuleTwo implements Rule
+class RemoveRule implements Rule
 {
-    /**
-     * READ-ONLY: The literals this rule consists of.
-     * @var array
-     */
-    public $literal1;
-    public $literal2;
-
+    protected $literal;
     protected $bitfield;
     protected $reasonData;
 
     /**
-     * @param int                   $literal1
-     * @param int                   $literal2
+     * @param int                   $literal
      * @param int                   $reason     A RULE_* constant describing the reason for generating this rule
      * @param Link|PackageInterface $reasonData
      * @param array                 $job        The job this rule was created from
      */
-    public function __construct($literal1, $literal2, $reason, $reasonData, $job = null)
+    public function __construct($literal, $reason, $reasonData, $job = null)
     {
-        if ($literal1 < $literal2) {
-            $this->literal1 = $literal1;
-            $this->literal2 = $literal2;
-        } else {
-            $this->literal1 = $literal2;
-            $this->literal2 = $literal1;
-        }
-
+        $this->literal = $literal;
         $this->reasonData = $reasonData;
 
         if ($job) {
@@ -61,12 +47,12 @@ class RuleTwo implements Rule
 
     public function getLiterals()
     {
-        return array($this->literal1, $this->literal2);
+        return array($this->literal);
     }
 
     public function getHash()
     {
-        $data = unpack('ihash', md5($this->literal1.','.$this->literal2, true));
+        $data = unpack('ihash', md5($this->literal, true));
 
         return $data['hash'];
     }
@@ -107,15 +93,11 @@ class RuleTwo implements Rule
      */
     public function equals(Rule $rule)
     {
-        if (2 != count($rule->getLiterals())) {
+        if (1 != count($rule->getLiterals())) {
             return false;
         }
 
-        if ($this->literal1 !== $rule->getLiterals()[0]) {
-            return false;
-        }
-
-        if ($this->literal2 !== $rule->getLiterals()[1]) {
+        if ($this->literal != count($rule->getLiterals()[0])) {
             return false;
         }
 
@@ -161,9 +143,7 @@ class RuleTwo implements Rule
     {
         $ruleText = '';
 
-        $ruleText .= $pool->literalToPrettyString($this->literal1, $installedMap);
-        $ruleText .= '|';
-        $ruleText .= $pool->literalToPrettyString($this->literal2, $installedMap);
+        $ruleText .= $pool->literalToPrettyString($this->literal, $installedMap);
 
         switch ($this->getReason()) {
             case self::RULE_INTERNAL_ALLOW_UPDATE:
@@ -176,10 +156,14 @@ class RuleTwo implements Rule
                 return "Remove command rule ($ruleText)";
 
             case self::RULE_PACKAGE_CONFLICT:
-                $package1 = $pool->literalToPackage($this->literal1);
+                //TODO
+
+                return '';
+                /*$package1 = $pool->literalToPackage($this->literal1);
                 $package2 = $pool->literalToPackage($this->literal2);
 
                 return $package1->getPrettyString().' conflicts with '.$this->formatPackagesUnique($pool, array($package2)).'.';
+                */
 
             case self::RULE_PACKAGE_REQUIRES:
                 $literals = $this->getLiterals();
@@ -292,7 +276,7 @@ class RuleTwo implements Rule
     {
         $result = ($this->isDisabled()) ? 'disabled(' : '(';
 
-        $result .= $this->literal1 . '|' . $this->literal2 . ')';
+        $result .= $this->literal . ')';
 
         return $result;
     }

@@ -19,29 +19,35 @@ use Composer\Package\Link;
 /**
  * @author Nils Adermann <naderman@naderman.de>
  */
-class RuleImpl implements Rule
+class ConflictRule implements Rule
 {
     /**
      * READ-ONLY: The literals this rule consists of.
      * @var array
      */
-    public $literals;
+    public $literal1;
+    public $literal2;
 
     protected $bitfield;
     protected $reasonData;
 
     /**
-     * @param array                 $literals
+     * @param int                   $literal1
+     * @param int                   $literal2
      * @param int                   $reason     A RULE_* constant describing the reason for generating this rule
      * @param Link|PackageInterface $reasonData
      * @param array                 $job        The job this rule was created from
      */
-    public function __construct(array $literals, $reason, $reasonData, $job = null)
+    public function __construct($literal1, $literal2, $reason, $reasonData, $job = null)
     {
-        // sort all packages ascending by id
-        sort($literals);
+        if ($literal1 < $literal2) {
+            $this->literal1 = $literal1;
+            $this->literal2 = $literal2;
+        } else {
+            $this->literal1 = $literal2;
+            $this->literal2 = $literal1;
+        }
 
-        $this->literals = $literals;
         $this->reasonData = $reasonData;
 
         if ($job) {
@@ -55,12 +61,12 @@ class RuleImpl implements Rule
 
     public function getLiterals()
     {
-        return $this->literals;
+        return array($this->literal1, $this->literal2);
     }
 
     public function getHash()
     {
-        $data = unpack('ihash', md5(implode(',', $this->literals), true));
+        $data = unpack('ihash', md5($this->literal1.','.$this->literal2, true));
 
         return $data['hash'];
     }
@@ -101,15 +107,16 @@ class RuleImpl implements Rule
      */
     public function equals(Rule $rule)
     {
-        $literals = $rule->getLiterals();
-        if (count($this->literals) != count($literals)) {
+        if (2 != count($rule->getLiterals())) {
             return false;
         }
 
-        for ($i = 0, $n = count($this->literals); $i < $n; $i++) {
-            if ($this->literals[$i] !== $literals[$i]) {
-                return false;
-            }
+        if ($this->literal1 !== $rule->getLiterals()[0]) {
+            return false;
+        }
+
+        if ($this->literal2 !== $rule->getLiterals()[1]) {
+            return false;
         }
 
         return true;
@@ -147,18 +154,16 @@ class RuleImpl implements Rule
 
     public function isAssertion()
     {
-        return 1 === count($this->literals);
+        return false;
     }
 
     public function getPrettyString(Pool $pool, array $installedMap = array())
     {
         $ruleText = '';
-        foreach ($this->literals as $i => $literal) {
-            if ($i != 0) {
-                $ruleText .= '|';
-            }
-            $ruleText .= $pool->literalToPrettyString($literal, $installedMap);
-        }
+
+        $ruleText .= $pool->literalToPrettyString($this->literal1, $installedMap);
+        $ruleText .= '|';
+        $ruleText .= $pool->literalToPrettyString($this->literal2, $installedMap);
 
         switch ($this->getReason()) {
             case self::RULE_INTERNAL_ALLOW_UPDATE:
@@ -171,13 +176,13 @@ class RuleImpl implements Rule
                 return "Remove command rule ($ruleText)";
 
             case self::RULE_PACKAGE_CONFLICT:
-                $package1 = $pool->literalToPackage($this->literals[0]);
-                $package2 = $pool->literalToPackage($this->literals[1]);
+                $package1 = $pool->literalToPackage($this->literal1);
+                $package2 = $pool->literalToPackage($this->literal2);
 
                 return $package1->getPrettyString().' conflicts with '.$this->formatPackagesUnique($pool, array($package2)).'.';
 
             case self::RULE_PACKAGE_REQUIRES:
-                $literals = $this->literals;
+                $literals = $this->getLiterals();
                 $sourceLiteral = array_shift($literals);
                 $sourcePackage = $pool->literalToPackage($sourceLiteral);
 
@@ -249,7 +254,7 @@ class RuleImpl implements Rule
             case self::RULE_INSTALLED_PACKAGE_OBSOLETES:
                 return $ruleText;
             case self::RULE_PACKAGE_SAME_NAME:
-                return 'Can only install one of: ' . $this->formatPackagesUnique($pool, $this->literals) . '.';
+                return 'Can only install one of: ' . $this->formatPackagesUnique($pool, $this->getLiterals()) . '.';
             case self::RULE_PACKAGE_IMPLICIT_OBSOLETES:
                 return $ruleText;
             case self::RULE_LEARNED:
@@ -287,14 +292,7 @@ class RuleImpl implements Rule
     {
         $result = ($this->isDisabled()) ? 'disabled(' : '(';
 
-        foreach ($this->literals as $i => $literal) {
-            if ($i != 0) {
-                $result .= '|';
-            }
-            $result .= $literal;
-        }
-
-        $result .= ')';
+        $result .= $this->literal1 . '|' . $this->literal2 . ')';
 
         return $result;
     }

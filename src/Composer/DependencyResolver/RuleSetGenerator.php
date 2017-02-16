@@ -61,7 +61,7 @@ class RuleSetGenerator
             $literals[] = $provider->id;
         }
 
-        return new RuleImpl($literals, $reason, $reasonData);
+        return new GenericRule($literals, $reason, $reasonData);
     }
 
     /**
@@ -83,7 +83,7 @@ class RuleSetGenerator
             $literals[] = $package->id;
         }
 
-        return new RuleImpl($literals, $reason, $job['packageName'], $job);
+        return new GenericRule($literals, $reason, $job['packageName'], $job);
     }
 
     /**
@@ -99,7 +99,8 @@ class RuleSetGenerator
      */
     protected function createRemoveRule(PackageInterface $package, $reason, $job)
     {
-        return new RuleImpl(array(-$package->id), $reason, $job['packageName'], $job);
+        //TODO
+        return new GenericRule(array(-$package->id), $reason, $job['packageName'], $job);
     }
 
     /**
@@ -123,7 +124,7 @@ class RuleSetGenerator
             return null;
         }
 
-        return new RuleTwo(-$issuer->id, -$provider->id, $reason, $reasonData);
+        return new ConflictRule(-$issuer->id, -$provider->id, $reason, $reasonData);
     }
 
     /**
