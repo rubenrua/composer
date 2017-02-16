@@ -21,13 +21,8 @@ use Composer\Package\Link;
  */
 class ConflictRule implements Rule
 {
-    /**
-     * READ-ONLY: The literals this rule consists of.
-     * @var array
-     */
-    public $literal1;
-    public $literal2;
-
+    protected $literal1;
+    protected $literal2;
     protected $bitfield;
     protected $reasonData;
 

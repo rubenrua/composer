@@ -21,11 +21,7 @@ use Composer\Package\Link;
  */
 class GenericRule implements Rule
 {
-    /**
-     * READ-ONLY: The literals this rule consists of.
-     * @var array
-     */
-    public $literals;
+    protected $literals;
 
     protected $bitfield;
     protected $reasonData;
