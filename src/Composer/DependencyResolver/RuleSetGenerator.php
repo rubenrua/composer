@@ -15,6 +15,7 @@ namespace Composer\DependencyResolver;
 use Composer\Package\PackageInterface;
 use Composer\Package\AliasPackage;
 use Composer\Repository\PlatformRepository;
+use Composer\Semver\Constraint\Constraint;
 
 /**
  * @author Nils Adermann <naderman@naderman.de>
@@ -192,6 +193,15 @@ class RuleSetGenerator
 
             $this->addedMap[$package->id] = true;
 
+            // var_dump($this->jobs);
+            // exit;
+            if ($this->incompatible($package)) {
+                //echo $package->getPrettyString() . " -\n";
+                continue;
+            } else {
+                //echo $package->getPrettyString() . " +\n";
+            }
+
             foreach ($package->getRequires() as $link) {
                 if ($ignorePlatformReqs && preg_match(PlatformRepository::PLATFORM_PACKAGE_REGEX, $link->getTarget())) {
                     continue;
@@ -312,6 +322,41 @@ class RuleSetGenerator
         }
     }
 
+
+    public function incompatible(PackageInterface $package1, $package2Name = 'symfony/symfony', $package2Version = '2.8.*')
+    {
+
+        if ($package1->getName() !== $package2Name) {
+            $package1Constraint = null;
+            foreach($package1->getReplaces() as $link) {
+
+                var_dump($link->getTarget() . " <---");
+                if ($link->getTarget() === $package2Name) {
+                    $package1Constraint = $link->getConstraint();
+                }
+            }
+
+            if ("symfony/config v2.4.2" === $package1->getPrettyString()) {
+                exit;
+            }
+
+            if (null === $package1Constraint) {
+                return false;
+            }
+        } else {
+            $package1Constraint = new Constraint('==', $package1->getVersion());
+        }
+
+        $package2Constraint = new Constraint('==', $package2Version);
+
+        if (!$package2Constraint->matches($package1Constraint)) {
+            return true;
+        }
+
+        return false;
+
+    }
+
     public function getRulesFor($jobs, $installedMap, $ignorePlatformReqs = false)
     {
         $this->jobs = $jobs;
@@ -331,7 +376,14 @@ class RuleSetGenerator
             $this->addRulesForPackage($package, $ignorePlatformReqs);
         }
 
+        var_dump("---------------------------------");
+        var_dump($this->rules->count());
+
         $this->addRulesForJobs($ignorePlatformReqs);
+
+        var_dump("--");
+        var_dump($this->rules->count());
+        var_dump("---------------------------------");
 
         return $this->rules;
     }
